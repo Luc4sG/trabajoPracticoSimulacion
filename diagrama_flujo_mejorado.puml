@@ -32,7 +32,7 @@ end note
 
 repeat
 
-  :Buscar el menor tiempo_proxima_salida(i);
+  :Buscar el menor tiempo_proxima_salida(i)]
   
   note right: k = argmin(TPS[1..n])
   
@@ -41,11 +41,20 @@ repeat
     group EVENTO: LLEGADA
       :suma_tiempo_permanencia += (tiempo_proxima_llegada - tiempo_simulacion) * personas_totales_sistema;
       :tiempo_simulacion = tiempo_proxima_llegada;
-      :Generar tiempo_entre_arribos;
+      
+      #LightYellow:<&cog> **Generar tiempo_entre_arribos**]
+      
+      note right
+        **Rangos por Turno:**
+        **Mañana (8:00-12:00):** Uniforme(1, 4) min
+        **Tarde (12:00-18:00):** Uniforme(0.5, 2) min  
+
+      end note
+      
       :tiempo_proxima_llegada = tiempo_simulacion + tiempo_entre_arribos;
       
-      :Buscar en Cola del Menor cantidad de Personas;
-      :Tratar Arrepentimiento;
+      :Buscar en Cola del Menor cantidad de Personas]
+      :Tratar Arrepentimiento]
       
       note right
         **Rangos de Arrepentimiento:**
@@ -58,7 +67,7 @@ repeat
       :personas_totales_sistema += 1;
       
       if (personas_en_sistema(k) = 1?) then (SÍ)
-        :Generar tiempo_atencion;
+        #LightYellow:<&cog> **Generar tiempo_atencion**]
         :tiempo_proxima_salida(k) = tiempo_simulacion + tiempo_atencion;
         :suma_tiempo_atencion(k) += tiempo_atencion;
       else (NO)
@@ -74,7 +83,7 @@ repeat
       :personas_en_sistema(k) -= 1;
       
       if (personas_en_sistema(k) ≥ 1?) then (SÍ)
-        :Generar tiempo_atencion;
+        #LightYellow:<&cog> **Generar tiempo_atencion**]
         :tiempo_proxima_salida(k) = tiempo_simulacion + tiempo_atencion;
         :suma_tiempo_atencion(k) += tiempo_atencion;
       else (NO)
@@ -87,7 +96,7 @@ repeat
 repeat while (tiempo_simulacion < tiempo_fin?) is (NO)
 -> SÍ;
 
-:Calcular estadísticas finales;
+:Calcular estadísticas finales]
 
 note right
   **Para cada i calcular:**

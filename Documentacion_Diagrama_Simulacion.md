@@ -88,8 +88,8 @@ Tratar Arrepentimiento
 
 **Rangos de decisión:**
 - **15+ min de espera:** 20% se va (80% se queda)
-- **20+ min de espera:** 45% se va (50% se queda)  
-- **25+ min de espera:** 96% se va (10% se queda)
+- **20+ min de espera:** 45% se va (55% se queda)  
+- **25+ min de espera:** 96% se va (4% se queda)
 
 **Caminos posibles:**
 - **Cliente se va:** Sale del sistema sin ser atendido
@@ -97,19 +97,19 @@ Tratar Arrepentimiento
 
 ### 3.5 **Incorporación al Sistema** (Solo si no se arrepiente)
 ```
-personas_en_sistema_k += 1
+personas_en_sistema(k) += 1
 personas_totales_sistema += 1
 ```
 
 ### 3.6 **Decisión de Atención Inmediata**
 
-**Condición:** `personas_en_sistema_k = 1`
+**Condición:** `personas_en_sistema(k) = 1`
 
 #### 🟢 **CAMINO A1: SERVIDOR LIBRE** (SI)
 ```
 Generar tiempo_atencion
-tiempo_proxima_salida_k = tiempo_simulacion + tiempo_atencion
-suma_tiempo_atencion_k += tiempo_atencion
+tiempo_proxima_salida(k) = tiempo_simulacion + tiempo_atencion
+suma_tiempo_atencion(k) += tiempo_atencion
 ```
 
 **Explicación:** 
@@ -132,8 +132,8 @@ suma_tiempo_atencion_k += tiempo_atencion
 
 ### 3.1 **Actualización del Tiempo del Sistema**
 ```
-suma_tiempo_permanencia += (tiempo_proxima_salida_k - tiempo_simulacion) * personas_totales_sistema
-tiempo_simulacion = tiempo_proxima_salida_k
+suma_tiempo_permanencia += (tiempo_proxima_salida(k) - tiempo_simulacion) * personas_totales_sistema
+tiempo_simulacion = tiempo_proxima_salida(k)
 ```
 
 **Explicación:** 
@@ -142,20 +142,20 @@ tiempo_simulacion = tiempo_proxima_salida_k
 
 ### 3.2 **Liberación del Cliente**
 ```
-personas_en_sistema_k -= 1
+personas_en_sistema(k) -= 1
 ```
 
 **Explicación:** Un cliente termina su servicio y sale del sistema.
 
 ### 3.3 **Decisión de Próximo Servicio**
 
-**Condición:** `personas_en_sistema_k >= 1`
+**Condición:** `personas_en_sistema(k) >= 1`
 
 #### 🟢 **CAMINO B1: HAY COLA** (SI)
 ```
 Generar tiempo_atencion
-tiempo_proxima_salida_k = tiempo_simulacion + tiempo_atencion
-suma_tiempo_atencion_k += tiempo_atencion
+tiempo_proxima_salida(k) = tiempo_simulacion + tiempo_atencion
+suma_tiempo_atencion(k) += tiempo_atencion
 ```
 
 **Explicación:**
@@ -165,7 +165,7 @@ suma_tiempo_atencion_k += tiempo_atencion
 
 #### 🟡 **CAMINO B2: NO HAY COLA** (NO)
 ```
-tiempo_proxima_salida_k = INFINITO
+tiempo_proxima_salida(k) = INFINITO
 ```
 
 **Explicación:**
@@ -256,4 +256,258 @@ El diagrama permite evaluar diferentes valores de `n` (cantidad de servidores) p
 
 ---
 
-*Este diagrama proporciona una base sólida para la toma de decisiones operativas en la ferretería, permitiendo optimizar el servicio al cliente mientras se mantiene la eficiencia del negocio.* 
+## 🔍 **8. ANÁLISIS DETALLADO DEL FLUJO DEL DIAGRAMA MEJORADO**
+
+### **8.1 MECANISMO DE DECISIÓN: ¿LLEGADA O SALIDA?**
+
+#### **¿Cómo funciona la comparación de tiempos?**
+
+```
+if (tiempo_proxima_llegada ≤ tiempo_proxima_salida(k))
+```
+
+**Explicación paso a paso:**
+
+1. **`tiempo_proxima_llegada`**: Es el momento exacto cuando llegará el próximo cliente
+   - Se calcula: `tiempo_actual + tiempo_entre_arribos`
+   - **Ejemplo**: Si estamos en t=45 min y el tiempo entre arribos es 3 min → próxima llegada = 48 min
+
+2. **`tiempo_proxima_salida(k)`**: Es el momento cuando el servidor k terminará de atender
+   - Se calcula: `tiempo_inicio_servicio + tiempo_atencion`
+   - **Ejemplo**: Si servidor 2 empezó a atender en t=44 min con tiempo de servicio 6 min → próxima salida = 50 min
+
+3. **La decisión**: 48 min ≤ 50 min → **SÍ** → Procesar **LLEGADA**
+
+**¿Por qué esta lógica?**
+- La simulación **siempre procesa el evento más cercano en el tiempo**
+- Garantiza el orden cronológico correcto de eventos
+- Si hay empate (≤), se da prioridad a las llegadas para evitar bias
+
+---
+
+### **8.2 CÁLCULO DE LA SUMA DE TIEMPO DE PERMANENCIA**
+
+#### **Fórmula Completa:**
+```
+suma_tiempo_permanencia += (tiempo_evento - tiempo_simulacion) * personas_totales_sistema
+```
+
+**¿Qué significa cada parte?**
+
+1. **`(tiempo_evento - tiempo_simulacion)`**: 
+   - **Duración del intervalo** entre el evento anterior y el actual
+   - **Ejemplo**: De t=45 min a t=48 min = 3 minutos
+
+2. **`personas_totales_sistema`**: 
+   - **Cantidad de personas** que estuvieron en el sistema durante ese intervalo
+   - **Incluye**: personas siendo atendidas + personas en cola
+
+3. **El producto**: 
+   - **Tiempo total acumulado** de todas las personas en el sistema
+   - **Ejemplo**: 3 min × 7 personas = 21 persona-minutos
+
+**Ejemplo Detallado:**
+```
+Situación en t=45: 7 personas en sistema
+Próximo evento en t=48: Nueva llegada
+Cálculo: (48-45) × 7 = 21 persona-minutos se suman al acumulador
+```
+
+**¿Por qué este cálculo?**
+- Permite calcular el **tiempo promedio de permanencia** al final
+- Fórmula final: `tiempo_promedio = suma_tiempo_permanencia / personas_atendidas`
+
+---
+
+### **8.3 GENERACIÓN DE TIEMPO ENTRE ARRIBOS POR TURNOS**
+
+#### **Rangos Uniformes Según Horario:**
+
+```
+Generar tiempo_entre_arribos:
+```
+
+**📅 TURNO MAÑANA (8:00 - 12:00)**
+- **Rango**: Uniforme(1, 4) minutos
+- **Justificación**: Menor affluencia, clientes espaciados
+- **Comportamiento**: Llegadas más predecibles y tranquilas
+
+**🌞 TURNO TARDE (12:00 - 18:00)**  
+- **Rango**: Uniforme(0.5, 2) minutos
+- **Justificación**: Hora pico, alta demanda
+- **Comportamiento**: Llegadas frecuentes y concentradas
+
+**Implementación en código:**
+```pseudocode
+hora_actual = tiempo_simulacion % 1440  // Convertir a minutos del día
+
+if (hora_actual >= 480 && hora_actual < 720)      // 8:00-12:00
+    tiempo_entre_arribos = Uniforme(1, 4)
+else if (hora_actual >= 720 && hora_actual < 1080) // 12:00-18:00  
+    tiempo_entre_arribos = Uniforme(0.5, 2)
+else if (hora_actual >= 1080 && hora_actual < 1320) // 18:00-22:00
+    tiempo_entre_arribos = Uniforme(2, 6)
+```
+
+---
+
+### **8.4 SECUENCIA COMPLETA DE DECISIONES**
+
+#### **Diagrama de Decisión Detallado:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    INICIO DE ITERACIÓN                      │
+└─────────────────────┬───────────────────────────────────────┘
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│  PASO 1: Buscar k = argmin(tiempo_proxima_salida[1..n])     │
+│  Resultado: k = servidor con menor tiempo de salida         │
+└─────────────────────┬───────────────────────────────────────┘
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│  PASO 2: Comparar tiempo_proxima_llegada ≤ tiempo_proxima_  │
+│          salida(k)                                          │
+└─────────────────────┬───────────────────────────────────────┘
+                      ▼
+              ┌───────────────┐
+              │ ¿Llegada ≤    │
+              │ Salida(k)?    │
+              └─────┬─────────┘
+                    │
+        ┌───────────┴───────────┐
+        ▼                       ▼
+    ┌───────┐               ┌───────┐
+    │  SÍ   │               │  NO   │
+    │LLEGADA│               │SALIDA │
+    └───┬───┘               └───┬───┘
+        │                       │
+        ▼                       ▼
+┌──────────────────┐    ┌──────────────────┐
+│ RAMA LLEGADA:    │    │ RAMA SALIDA:     │
+│                  │    │                  │
+│ 1. Actualizar    │    │ 1. Actualizar    │
+│    suma_tiempo_  │    │    suma_tiempo_  │
+│    permanencia   │    │    permanencia   │
+│                  │    │                  │
+│ 2. Avanzar reloj │    │ 2. Avanzar reloj │
+│    tiempo_sim =  │    │    tiempo_sim =  │
+│    tiempo_prox_  │    │    tiempo_prox_  │
+│    llegada       │    │    salida(k)     │
+│                  │    │                  │
+│ 3. Generar nuevo │    │ 3. Liberar       │
+│    tiempo_entre_ │    │    cliente:      │
+│    arribos       │    │    personas_en_  │
+│    (por turno)   │    │    sistema(k)--  │
+│                  │    │                  │
+│ 4. Asignar cola  │    │ 4. ¿Hay cola?    │
+│    menor cantidad│    │    ┌─SÍ─┐ ┌─NO─┐ │
+│                  │    │    │    │ │    │ │
+│ 5. Arrepentimi-  │    │    ▼    │ ▼    │ │
+│    ento (15+,    │    │ Atender │ TPS= │ │
+│    20+, 25+ min) │    │ próximo │ ∞    │ │
+│                  │    │         │      │ │
+│ 6. ¿Se queda?    │    │         │      │ │
+│    ┌─SÍ─┐ ┌─NO─┐ │    │         │      │ │
+│    │    │ │Sale│ │    │         │      │ │
+│    ▼    │ │sin │ │    │         │      │ │
+│ Personas│ │aten│ │    │         │      │ │
+│ _en_sis-│ │der │ │    │         │      │ │
+│ tema(k)+│ │    │ │    │         │      │ │
+│         │ │    │ │    │         │      │ │
+│ 7. ¿Serv│ │    │ │    │         │      │ │
+│    libre?│    │ │    │         │      │ │
+│ ┌─SÍ─┐  │ │    │ │    │         │      │ │
+│ │    │  │ │    │ │    │         │      │ │
+│ ▼    │  │ │    │ │    │         │      │ │
+│Aten- │  │ │    │ │    │         │      │ │
+│ción  │  │ │    │ │    │         │      │ │
+│inme- │  │ │    │ │    │         │      │ │
+│diata │  │ │    │ │    │         │      │ │
+│      │  │ │    │ │    │         │      │ │
+│ ┌─NO─┐  │ │    │ │    │         │      │ │
+│ │    │  │ │    │ │    │         │      │ │ 
+│ ▼    │  │ │    │ │    │         │      │ │
+│A cola│  │ │    │ │    │         │      │ │
+└──────┼──┼─┼────┼─┘    └─────────┼──────┼─┘
+       │  │ │    │                │      │
+       └──┴─┴────┴────────────────┴──────┘
+                      │
+                      ▼
+        ┌─────────────────────────────┐
+        │  ¿tiempo_simulacion <       │
+        │   tiempo_fin?               │
+        └─────────────┬───────────────┘
+                      │
+              ┌───────┴────────┐
+              ▼                ▼
+          ┌───────┐        ┌───────┐
+          │  SÍ   │        │  NO   │
+          │CONTI- │        │TERMI- │
+          │NUAR   │        │NAR    │
+          └───┬───┘        └───┬───┘
+              │                │
+              │                ▼
+              │      ┌──────────────────┐
+              │      │ ESTADÍSTICAS     │
+              │      │ FINALES          │
+              │      └──────────────────┘
+              │
+              └──────────────┐
+                             │
+              ┌──────────────┴──────────────┐
+              │     REGRESA AL INICIO       │
+              │    (Nueva iteración)        │
+              └─────────────────────────────┘
+```
+
+---
+
+### **8.5 CASOS ESPECÍFICOS Y EJEMPLOS**
+
+#### **Ejemplo 1: Procesamiento de Llegada**
+```
+Estado inicial:
+- tiempo_simulacion = 120 min
+- tiempo_proxima_llegada = 125 min  
+- tiempo_proxima_salida(1) = 130 min
+- tiempo_proxima_salida(2) = 128 min
+- personas_totales_sistema = 5
+
+Paso 1: k = argmin([130, 128]) = 2
+Paso 2: 125 ≤ 128 → SÍ → EVENTO LLEGADA
+
+Ejecución:
+1. suma_tiempo_permanencia += (125-120) × 5 = 25
+2. tiempo_simulacion = 125
+3. Generar tiempo_entre_arribos según turno
+4. Si turno tarde: Uniforme(0.5, 2) → suponer 1.5 min
+5. tiempo_proxima_llegada = 125 + 1.5 = 126.5
+6. Asignar a cola con menos gente
+7. Evaluar arrepentimiento...
+```
+
+#### **Ejemplo 2: Procesamiento de Salida**
+```
+Estado inicial:
+- tiempo_simulacion = 125 min
+- tiempo_proxima_llegada = 126.5 min
+- tiempo_proxima_salida(1) = 130 min  
+- tiempo_proxima_salida(2) = 126 min
+- personas_en_sistema(2) = 3
+
+Paso 1: k = argmin([130, 126]) = 2
+Paso 2: 126.5 ≤ 126 → NO → EVENTO SALIDA
+
+Ejecución:
+1. suma_tiempo_permanencia += (126-125) × 6 = 6
+2. tiempo_simulacion = 126
+3. personas_en_sistema(2) = 3 - 1 = 2
+4. Como personas_en_sistema(2) ≥ 1 → Hay cola
+5. Generar nuevo tiempo_atencion → suponer 4 min
+6. tiempo_proxima_salida(2) = 126 + 4 = 130
+```
+
+---
+
+*Esta sección proporciona el entendimiento completo del flujo lógico del diagrama mejorado, permitiendo implementar correctamente la simulación y comprender cada decisión del algoritmo.* 

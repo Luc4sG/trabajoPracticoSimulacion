@@ -328,7 +328,7 @@ def main():
             print(f" - Tiempo de espera promedio: {resultados['promedio_tiempo_espera']:.4f} min")
             print(f" - Tiempo máximo de espera: {resultados['tiempo_maximo_espera']:.2f} min")
             print(f" - Cumple objetivo (≤6 min): {'✅ SÍ' if resultados['cumple_objetivo'] else '❌ NO'}")
-            print(f" - {resultados['distribucion_texto']}")
+            #print(f" - {resultados['distribucion_texto']}")
             print(f" - Intervalo de Confianza (95%):")
             print(f"     - Límite Inferior: {resultados['limite_inferior']:.4f}")
             print(f"     - Límite Superior: {resultados['limite_superior']:.4f}")

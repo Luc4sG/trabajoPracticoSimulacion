@@ -148,7 +148,7 @@ if __name__ == "__main__":
     print("=" * 60)
     
     try:
-        numeros = generar_numeros_validados(1000)
+        numeros = generar_numeros_validados(10000)
         exportar_csv(numeros)
         print(f"\n🎯 {len(numeros)} números validados generados exitosamente!")
     except Exception as e:

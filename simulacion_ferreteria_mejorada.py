@@ -90,7 +90,6 @@ class SimuladorFerreteria:
         
         # Parámetros de simulación
         HIGHVALUE = 1000000
-        TFINAL = 240  # Duración turno en minutos
         CANT_TURNOS = 2  # mañana y tarde
         CANT_DIAS = 20  # días hábiles por mes
         
@@ -117,6 +116,12 @@ class SimuladorFerreteria:
                 for turno in range(CANT_TURNOS):
                     turno_tipo = "mañana" if turno == 0 else "tarde"
                     
+                    # Duración según turno
+                    if turno_tipo == "mañana":
+                        TFINAL = 270  # 8:00-12:30 = 4.5 horas
+                    else:  # tarde
+                        TFINAL = 240  # 16:30-20:30 = 4 horas
+                    
                     # Inicialización
                     t_proxima_llegada = self.generar_IA(turno_tipo)
                     t_actual = 0
@@ -140,7 +145,7 @@ class SimuladorFerreteria:
                             t_actual = t_proxima_llegada
                             
                             if t_actual <= TFINAL:  # Solo generar si dentro del horario
-                                t_proxima_llegada = t_llegada + self.generar_IA(turno_tipo)
+                                t_proxima_llegada = t_actual + self.generar_IA(turno_tipo)
                             else:
                                 t_proxima_llegada = HIGHVALUE
                             
@@ -240,7 +245,7 @@ class SimuladorFerreteria:
             "clientes_atendidos": cant_personas_diarias,
             "clientes_se_fueron": clientes_se_fueron_total,
             "porcentaje_perdida": (clientes_se_fueron_total / (cant_personas_diarias + clientes_se_fueron_total)) * 100,
-            "cumple_objetivo": tiempo_maximo_espera_total <= 6.0,
+            "cumple_objetivo": promedio_t_espera_total <= 6.0,
             "distribucion_normal": dist_normal,
             "distribucion_texto": dist_text,
             "desvio_estandar": desvio_est,

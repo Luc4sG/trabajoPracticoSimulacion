@@ -22,13 +22,14 @@ note right
   **Condiciones Iniciales:**
   * tiempo_simulacion = 0
   * tiempo_proxima_llegada = Generar tiempo_entre_arribos
-  * tiempo_proxima_salida = INFINITO
-  * personas_en_sistema = 0
+  * tiempo_proxima_salida[i] = INFINITO ∀i = 1..n
+  * personas_en_sistema[i] = 0 ∀i = 1..n
+  * personas_atendidas[i] = 0 ∀i = 1..n                   
   * cantidad_servidores = n
-  * suma_tiempo_permanencia = 0
-  * suma_tiempo_atencion = 0
-  * personas_atendidas = 0
-  * vi = 1..n
+  * suma_tiempo_permanencia[i] = 0 ∀i = 1..n
+  * suma_tiempo_atencion[i] = 0 ∀i = 1..n
+  * suma_tiempo_espera[i] = 0 ∀i = 1..n
+  * personas_totales_sistema = 0
   * tiempo_fin = Seleccionar tiempo_fin(turno)
 
 end note
@@ -47,14 +48,14 @@ repeat
 
     repeat
 
-    :Buscar el menor tiempo_proxima_salida(i)]
+    :Buscar el menor tiempo_proxima_salida[i];]
     
-    note right: k = argmin(TPS[1..n])
+    note right: k = argmin(tiempo_proxima_salida[1..n])
     
-    if (tiempo_proxima_llegada ≤ tiempo_proxima_salida(k)?) then (SÍ)
+    if (tiempo_proxima_llegada ≤ tiempo_proxima_salida[k]) then (SÍ)
         
         group EVENTO: LLEGADA
-        :suma_tiempo_permanencia += (tiempo_proxima_llegada - tiempo_simulacion) * personas_totales_sistema;
+        :suma_tiempo_permanencia[i] += (tiempo_proxima_llegada - tiempo_simulacion) * personas_en_sistema[i];
         :tiempo_simulacion = tiempo_proxima_llegada;
         
         #LightYellow:<&cog> **Generar tiempo_entre_arribos**]
@@ -67,8 +68,7 @@ repeat
         
         :tiempo_proxima_llegada = tiempo_simulacion + tiempo_entre_arribos;
         
-        :Buscar en Cola del Menor cantidad de Personas]
-        :Tratar Arrepentimiento]
+        :Tratar Arrepentimiento;]
         
         note right
             **Rangos de Arrepentimiento:**
@@ -77,32 +77,37 @@ repeat
             * 25+ min: 96% se va (4% se queda)
         end note
         
-        :personas_en_sistema(k) += 1;
-        :personas_totales_sistema += 1;
+        :Buscar servidor con menor cantidad de personas;]
         
-        if (personas_en_sistema(k) = 1?) then (SÍ)
+        note right: p = argmin(personas_en_sistema[1..n])
+        
+        :personas_en_sistema[p] += 1;
+        :personas_totales_sistema += 1;
+        :personas_atendidas[p] += 1;
+        
+        if (personas_en_sistema[p] = 1) then (SÍ)
             #LightYellow:<&cog> **Generar tiempo_atencion**]
-            :tiempo_proxima_salida(k) = tiempo_simulacion + tiempo_atencion;
-            :suma_tiempo_atencion(k) += tiempo_atencion;
+            :tiempo_proxima_salida[p] = tiempo_simulacion + tiempo_atencion;
+            :suma_tiempo_atencion[p] += tiempo_atencion;
         else (NO)
-            note right: Cliente va a cola, no se asigna tiempo de servicio aún
+            note right: Cliente va a cola y espera
         endif
         end group
         
     else (NO)
         
         group EVENTO: SALIDA
-        :suma_tiempo_permanencia += (tiempo_proxima_salida(k) - tiempo_simulacion) * personas_totales_sistema;
-        :tiempo_simulacion = tiempo_proxima_salida(k);
-        :personas_en_sistema(k) -= 1;
+        :suma_tiempo_permanencia[i] += (tiempo_proxima_salida[k] - tiempo_simulacion) * personas_en_sistema[i];
+        :tiempo_simulacion = tiempo_proxima_salida[k];
+        :personas_en_sistema[k] -= 1;
         :personas_totales_sistema -= 1;
         
-        if (personas_en_sistema(k) ≥ 1?) then (SÍ)
+        if (personas_en_sistema[k] ≥ 1) then (SÍ)
             #LightYellow:<&cog> **Generar tiempo_atencion**]
-            :tiempo_proxima_salida(k) = tiempo_simulacion + tiempo_atencion;
-            :suma_tiempo_atencion(k) += tiempo_atencion;
+            :tiempo_proxima_salida[k] = tiempo_simulacion + tiempo_atencion;
+            :suma_tiempo_atencion[k] += tiempo_atencion;
         else (NO)
-            :tiempo_proxima_salida(k) = INFINITO;
+            :tiempo_proxima_salida[k] = INFINITO;
         endif
         end group
         
@@ -120,13 +125,17 @@ note right
   * Y personas_totales_sistema = 0
 end note
 
-:Calcular estadísticas finales]
+:Calcular estadísticas finales;
 
 note right
-  **Para cada i calcular:**
-  * promedio_tiempo_permanencia = suma_tiempo_permanencia / personas_atendidas
-  * promedio_tiempo_atencion = suma_tiempo_atencion / personas_atendidas
-  * porcentaje_ocupacion = suma_tiempo_atencion / tiempo_simulacion
+  **Para cada servidor i calcular:**
+  * PPS[i] = suma_tiempo_permanencia[i] / personas_atendidas[i]
+  * PTE[i] = suma_tiempo_permanencia[i] - suma_tiempo_atencion[i] / personas_atendidas[i]
+  * PTA[i] = suma_tiempo_atencion[i] / personas_atendidas[i]
+  
+  **Estadísticas Globales:**
+  * Total personas atendidas = Σ personas_atendidas[i]
+  * Promedios generales del sistema
 end note
 
 stop

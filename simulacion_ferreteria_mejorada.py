@@ -224,7 +224,7 @@ class SimuladorFerreteria:
         # Intervalo de confianza
         dist_normal = self.determinar_tipo_distribucion(promedio_t_espera_simulacion)
         desvio_est = statistics.stdev(promedio_t_espera_simulacion)
-        alfa = 0.05
+        alfa = 0.01 # alfa del 99% cambiar en base la excperimentacion
         r = cant_corridas
         
         if dist_normal:
@@ -329,7 +329,7 @@ def main():
             print(f" - Tiempo máximo de espera: {resultados['tiempo_maximo_espera']:.2f} min")
             print(f" - Cumple objetivo (≤6 min): {'✅ SÍ' if resultados['cumple_objetivo'] else '❌ NO'}")
             #print(f" - {resultados['distribucion_texto']}")
-            print(f" - Intervalo de Confianza (95%):")
+            print(f" - Intervalo de Confianza (99%):")
             print(f"     - Límite Inferior: {resultados['limite_inferior']:.4f}")
             print(f"     - Límite Superior: {resultados['limite_superior']:.4f}")
         
